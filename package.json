@@ -1,0 +1,30 @@
+{
+  "name": "pi-test-oracle",
+  "version": "0.1.0",
+  "description": "Automated TDD oracle that generates minimal failing tests (RED), tracks state to GREEN, and suggests refactors for the Pi coding agent.",
+  "keywords": ["pi-package", "tdd", "testing", "red-green-refactor", "test-generation"],
+  "pi": {
+    "extensions": ["./extensions"]
+  },
+  "files": [
+    "extensions",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
