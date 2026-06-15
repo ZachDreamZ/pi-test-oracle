@@ -33,7 +33,9 @@ export class TddStateStore {
 				code = (err as NodeJS.ErrnoException).code || "UNKNOWN";
 			}
 			if (isTransientIoError({ code } as unknown as Error)) {
-				console.error(`[pi-test-oracle] Transient I/O error loading state (${code})`);
+				console.error(
+					`[pi-test-oracle] Transient I/O error loading state (${code})`,
+				);
 			}
 			return { version: 1, tests: {} };
 		}
@@ -44,7 +46,9 @@ export class TddStateStore {
 				return parsed;
 			}
 		} catch (err) {
-			console.error(`[pi-test-oracle] Failed to parse state, starting fresh: ${(err as Error).message}`);
+			console.error(
+				`[pi-test-oracle] Failed to parse state, starting fresh: ${(err as Error).message}`,
+			);
 		}
 		return { version: 1, tests: {} };
 	}
@@ -63,7 +67,9 @@ export class TddStateStore {
 			} catch {
 				// Ignore cleanup errors
 			}
-			console.error(`[pi-test-oracle] Failed to save state: ${(err as Error).message}`);
+			console.error(
+				`[pi-test-oracle] Failed to save state: ${(err as Error).message}`,
+			);
 		}
 	}
 
@@ -82,7 +88,11 @@ export class TddStateStore {
 		return record;
 	}
 
-	public updateState(path: string, newState: TddState, output: string = ""): void {
+	public updateState(
+		path: string,
+		newState: TddState,
+		output: string = "",
+	): void {
 		const record = this.state.tests[path];
 		if (!record) {
 			console.warn(`[pi-test-oracle] No record found for ${path}`);

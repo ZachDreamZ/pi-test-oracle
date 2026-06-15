@@ -13,7 +13,9 @@ export class NexusConsumer {
 	private auditReportPath: string;
 
 	constructor(auditReportPath?: string) {
-		this.auditReportPath = auditReportPath || path.join(os.homedir(), ".pi", "audit-master", "audit-report.md");
+		this.auditReportPath =
+			auditReportPath ||
+			path.join(os.homedir(), ".pi", "audit-master", "audit-report.md");
 	}
 
 	public readLatestAuditReport(): AuditFinding[] {
@@ -31,13 +33,17 @@ export class NexusConsumer {
 			const content = readFileWithRetry(this.auditReportPath, 2, 50);
 			if (content === null) {
 				if (isTransientIoError({ code: "EBUSY" } as unknown as Error)) {
-					console.error(`[pi-test-oracle] Transient I/O error reading audit report`);
+					console.error(
+						`[pi-test-oracle] Transient I/O error reading audit report`,
+					);
 				}
 				return [];
 			}
 			return this.parseAuditMarkdown(content);
 		} catch (err) {
-			console.error(`[pi-test-oracle] Failed to read audit report: ${(err as Error).message}`);
+			console.error(
+				`[pi-test-oracle] Failed to read audit report: ${(err as Error).message}`,
+			);
 			return [];
 		}
 	}
@@ -49,7 +55,10 @@ export class NexusConsumer {
 
 		for (const line of lines) {
 			if (!line.startsWith("|") || line.includes("---")) continue;
-			const cells = line.split("|").map((c) => c.trim()).filter(Boolean);
+			const cells = line
+				.split("|")
+				.map((c) => c.trim())
+				.filter(Boolean);
 			if (cells.length < 5) continue;
 
 			const [id, file, lineNum, severity, ...descParts] = cells;
@@ -72,8 +81,12 @@ export class NexusConsumer {
 	public prioritize(findings: AuditFinding[]): TestSuggestion[] {
 		return findings
 			.map((f) => {
-				const symbolMatch = f.description.match(/(?:function|class|method|const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
-				const symbol = symbolMatch ? symbolMatch[1] : path.basename(f.file, path.extname(f.file));
+				const symbolMatch = f.description.match(
+					/(?:function|class|method|const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/,
+				);
+				const symbol = symbolMatch
+					? symbolMatch[1]
+					: path.basename(f.file, path.extname(f.file));
 				const priority = f.severity === "CRITICAL" ? 10 : 5;
 				return {
 					symbol,
