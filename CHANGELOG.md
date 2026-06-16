@@ -1,7 +1,20 @@
 # Changelog
 
+## [0.3.0] - 2026-06-16
+
+### Closed-Loop TDD & Generator Enhancements
+
+- **`test_oracle_update` tool**: Automatically updates TDD states by parsing Jest output (PASS/FAIL lines).
+- **`test_oracle_run` tool**: Executes tests via `pi.bash` and auto-updates states from output.
+- **Advanced Type Support**: `TestGenerator` now handles intersection types (`A & B`), generics (`Map<K,V>`, `Set<T>`), and more edge cases for primitives.
+- **Signature Length Limit**: `parseSignature` rejects signatures >2000 chars to prevent ReDoS and token explosion.
+- **Status Output**: `test_oracle_status` now returns `lastRunOutput` for each tracked test.
+- **Test Suite**: Expanded to 43 tests across 5 suites (added generator and state tests for new features).
+
 ## [0.2.0] - 2026-06-14
+
 ### Resilience & Error Handling
+
 - **Retry Logic**: New `readFileWithRetry` utility retries transient I/O errors (EBUSY, EAGAIN, etc.) with exponential backoff.
 - **Circuit Breaker**: `NexusConsumer` and `CoverageAnalyzer` now cap file sizes (1MB and 5MB respectively) to prevent OOM.
 - **Line Caps**: Markdown and LCOV parsers cap at 10,000 / 50,000 lines to prevent runaway parsing.
@@ -12,7 +25,9 @@
 - **Test Suite**: Expanded to 40 tests across 5 suites (added `resilience.test.ts`).
 
 ## [0.1.0] - 2026-06-14
+
 ### Initial Release
+
 - **Test Generator**: Parses TypeScript/JavaScript function signatures and generates minimal failing Jest tests.
 - **TDD State Tracker**: Persists RED/GREEN/REFACTOR state to `~/.pi/test-oracle/state.json`.
 - **Coverage Analyzer**: Parses Jest JSON and LCOV coverage reports; finds gaps below threshold.

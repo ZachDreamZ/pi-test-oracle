@@ -12,6 +12,7 @@ export class TestGenerator {
 	 *   - export function foo(...)
 	 */
 	public parseSignature(signature: string): ParsedSignature | null {
+		if (!signature || signature.length > 2000) return null;
 		const isAsync = /async\s+/.test(signature);
 		const isExported = /export\s+/.test(signature);
 
@@ -102,6 +103,7 @@ export class TestGenerator {
 
 	/**
 	 * Generate test inputs for a given type.
+	 * Supports primitives, unions, intersections, arrays, and generics.
 	 */
 	public generateInputs(type: string): string[] {
 		const t = type.toLowerCase().trim();
@@ -116,6 +118,16 @@ export class TestGenerator {
 			return [...new Set(inputs)];
 		}
 
+		// Handle intersection types (e.g., "TypeA & TypeB")
+		if (t.includes("&")) {
+			const parts = t.split("&").map((p) => p.trim());
+			const inputs: string[] = [];
+			for (const part of parts) {
+				inputs.push(...this.generateInputs(part));
+			}
+			return [...new Set(inputs)];
+		}
+
 		// Primitives
 		if (t === "string")
 			return [
@@ -123,7 +135,9 @@ export class TestGenerator {
 				'" "',
 				'"a"',
 				'"x".repeat(100)',
-				'"unicode-\u00e9-\u4e2d\u6587"',
+				'"unicode-é-中文"',
+				'"\\n\\t\\r"',
+				'" ".trim()',
 			];
 		if (t === "number")
 			return [
@@ -133,6 +147,9 @@ export class TestGenerator {
 				"Number.MAX_SAFE_INTEGER",
 				"Number.MIN_SAFE_INTEGER",
 				"0.5",
+				"NaN",
+				"Infinity",
+				"-Infinity",
 			];
 		if (t === "boolean") return ["true", "false"];
 		if (t === "null") return ["null"];
@@ -141,20 +158,39 @@ export class TestGenerator {
 		// Array
 		if (t.endsWith("[]") || t.includes("array<")) {
 			const inner = t.replace("[]", "").replace(/array<(.+)>/i, "$1");
+			const innerInputs = this.generateInputs(inner);
 			return [
 				"[]",
 				`[null]`,
-				`Array(10).fill(${this.generateInputs(inner)[0] || "0"})`,
+				`[${innerInputs[0] || "null"}]`,
+				`Array(10).fill(${innerInputs[0] || "0"})`,
 			];
+		}
+
+		// Generics: Map<K, V>, Set<T>
+		const genericMatch = t.match(/^([a-z]+)<(.+)>$/i);
+		if (genericMatch) {
+			const typeName = genericMatch[1];
+			const innerTypes = genericMatch[2].split(",").map((s) => s.trim());
+
+			if (typeName === "map") {
+				const k = this.generateInputs(innerTypes[0] || "any")[0] || "null";
+				const v = this.generateInputs(innerTypes[1] || "any")[0] || "null";
+				return ["new Map()", `new Map([ [${k}, ${v}] ])`];
+			}
+			if (typeName === "set") {
+				const val = this.generateInputs(innerTypes[0] || "any")[0] || "null";
+				return ["new Set()", `new Set([${val}])`];
+			}
 		}
 
 		// Object
 		if (t === "object" || t.startsWith("{"))
-			return ["{}", "Object.create(null)"];
+			return ["{}", "Object.create(null)", "{ key: 'value' }"];
 
 		// Promise (assume async)
 		if (t === "promise" || t.startsWith("promise<"))
-			return ["Promise.resolve()"];
+			return ["Promise.resolve()", "Promise.reject(new Error('failed'))"];
 
 		// Fallback
 		return ["null", "undefined", "0", '""'];

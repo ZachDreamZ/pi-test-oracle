@@ -51,6 +51,21 @@ describe("TddStateStore", () => {
 		expect(store.getByState("GREEN")).toHaveLength(1);
 	});
 
+	test("updates state from Jest output", () => {
+		store.recordTest("tests/auth.test.ts", "validateToken");
+		store.recordTest("tests/session.test.ts", "resumeSession");
+
+		const result = store.updateFromOutput(
+			"PASS tests/auth.test.ts\nFAIL tests/session.test.ts\nTest Suites: 1 failed, 1 passed",
+		);
+
+		expect(result.updated).toBe(2);
+		expect(result.passed).toBe(1);
+		expect(result.failed).toBe(1);
+		expect(store.get("tests/auth.test.ts")?.state).toBe("GREEN");
+		expect(store.get("tests/session.test.ts")?.state).toBe("RED");
+	});
+
 	test("get() returns undefined for unknown test", () => {
 		expect(store.get("nonexistent.test.ts")).toBeUndefined();
 	});

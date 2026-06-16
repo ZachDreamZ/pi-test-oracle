@@ -12,11 +12,11 @@ pi install npm:pi-test-oracle
 
 `pi-test-oracle` is the **proof generator** of the Nexus monorepo. Where `pi-audit-master` finds bugs and `pi-impact-analyzer` maps their blast radius, `pi-test-oracle` turns those findings into executable, runnable tests that validate the fix.
 
-It automates the **RED-GREEN-REFACTOR** cycle:
+It automates the **RED-GREEN-REFACTOR** cycle with a **closed-loop** design:
 
-1.  **RED**: Given a function signature and expected behavior, generate a Jest test that fails because the feature is missing or broken.
-2.  **GREEN**: Track when the test passes (after the agent implements a fix).
-3.  **REFACTOR**: Suggest improvements once the test is stable.
+1. **RED**: Given a function signature and expected behavior, generate a Jest test that fails because the feature is missing or broken.
+2. **GREEN**: Run `test_oracle_run` to execute tests and automatically update states from output.
+3. **REFACTOR**: Suggest improvements once the test is stable.
 
 ## Slash Commands
 
@@ -26,9 +26,11 @@ It automates the **RED-GREEN-REFACTOR** cycle:
 ## Tools (for the Pi agent)
 
 - `test_oracle_generate({ signature, importPath, symbolName?, testFilePath? })` - Generate a minimal failing test.
-- `test_oracle_status({ state? })` - List tracked tests, optionally filtered by state.
+- `test_oracle_status({ state? })` - List tracked tests, optionally filtered by state. Includes `lastRunOutput`.
 - `test_oracle_coverage({ threshold? })` - Find coverage gaps.
 - `test_oracle_from_audit()` - Read the latest `pi-audit-master` report and suggest tests for each finding.
+- `test_oracle_update({ output })` - Parse test output (e.g., from Jest) and automatically update TDD states.
+- `test_oracle_run({ command? })` - Execute tests and auto-update states (default: `npm test`).
 
 ## Usage Example
 
@@ -99,10 +101,11 @@ Optional `~/.pi/test-oracle/config.json`:
 
 ## Architecture
 
-- `extensions/generator.ts` - Parses function signatures and generates test files.
-- `extensions/state.ts` - Persists TDD state to `state.json`.
-- `extensions/coverage.ts` - Parses Jest coverage reports.
+- `extensions/generator.ts` - Parses function signatures and generates test files. Supports primitives, unions, intersections, arrays, generics (Map, Set).
+- `extensions/state.ts` - Persists TDD state to `state.json`. Includes `updateFromOutput()` for automatic state sync from Jest output.
+- `extensions/coverage.ts` - Parses Jest coverage reports (JSON and LCOV).
 - `extensions/nexus.ts` - Reads `pi-audit-master` outputs.
+- `extensions/util.ts` - Shared utilities: retry logic, transient I/O error detection, file size limits.
 - `extensions/index.ts` - Extension entry point with commands and tools.
 
 ## License

@@ -4,7 +4,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { TddState, TestRecord, TddStateFile } from "./types";
+import type { TddState, TestRecord, TddStateFile } from "./types";
 import { readFileWithRetry, isTransientIoError } from "./util";
 
 const STATE_DIR = path.join(os.homedir(), ".pi", "test-oracle");
@@ -111,6 +111,41 @@ export class TddStateStore {
 
 	public getByState(state: TddState): TestRecord[] {
 		return this.getAll().filter((t) => t.state === state);
+	}
+
+	public updateFromOutput(output: string): {
+		updated: number;
+		failed: number;
+		passed: number;
+	} {
+		const results: { path: string; state: TddState }[] = [];
+		const lines = output.split("\n");
+
+		// Simple Jest output parsing:
+		// PASS tests/my-test.test.ts
+		// FAIL tests/my-test.test.ts
+		for (const line of lines) {
+			const match = line.match(/^(PASS|FAIL)\s+([^\s]+)/i);
+			if (match) {
+				const state = match[1].toUpperCase() === "PASS" ? "GREEN" : "RED";
+				const path = match[2];
+				results.push({ path, state });
+			}
+		}
+
+		let passed = 0,
+			failed = 0;
+		for (const { path, state } of results) {
+			const record = this.state.tests[path];
+			if (record) {
+				this.updateState(path, state, "Test run completed");
+				if (state === "GREEN") passed++;
+				else failed++;
+			}
+		}
+
+		this.save();
+		return { updated: results.length, passed, failed };
 	}
 
 	public get(path: string): TestRecord | undefined {

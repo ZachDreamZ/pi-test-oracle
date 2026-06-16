@@ -5,7 +5,9 @@ describe("TestGenerator", () => {
 
 	describe("parseSignature", () => {
 		test("parses a simple function", () => {
-			const result = gen.parseSignature("function validateToken(token: string): boolean");
+			const result = gen.parseSignature(
+				"function validateToken(token: string): boolean",
+			);
 			expect(result).not.toBeNull();
 			expect(result?.name).toBe("validateToken");
 			expect(result?.params).toHaveLength(1);
@@ -26,7 +28,9 @@ describe("TestGenerator", () => {
 		});
 
 		test("parses arrow function", () => {
-			const result = gen.parseSignature("const add = (a: number, b: number) => number");
+			const result = gen.parseSignature(
+				"const add = (a: number, b: number) => number",
+			);
 			expect(result?.name).toBe("add");
 			expect(result?.params).toHaveLength(2);
 		});
@@ -38,7 +42,9 @@ describe("TestGenerator", () => {
 		});
 
 		test("handles optional parameters", () => {
-			const result = gen.parseSignature("function foo(a: string, b?: number): void");
+			const result = gen.parseSignature(
+				"function foo(a: string, b?: number): void",
+			);
 			expect(result?.params[1].type).toContain("undefined");
 		});
 
@@ -70,6 +76,24 @@ describe("TestGenerator", () => {
 			const inputs = gen.generateInputs("string | null");
 			expect(inputs).toContain("null");
 			expect(inputs).toContain('""');
+		});
+
+		test("handles intersection types", () => {
+			const inputs = gen.generateInputs(
+				"Record<string, string> & { id: string }",
+			);
+			expect(inputs).toContain("null");
+			expect(inputs).toContain('""');
+		});
+
+		test("handles map and set generics", () => {
+			const mapInputs = gen.generateInputs("Map<string, number>");
+			expect(mapInputs).toContain("new Map()");
+			expect(mapInputs.some((i) => i.includes("new Map([ ["))).toBe(true);
+
+			const setInputs = gen.generateInputs("Set<string>");
+			expect(setInputs).toContain("new Set()");
+			expect(setInputs.some((i) => i.includes("new Set(["))).toBe(true);
 		});
 	});
 
